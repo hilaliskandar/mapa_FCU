@@ -6,9 +6,14 @@
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <!-- Critical CSS for immediate rendering -->
-        <link rel="stylesheet" href="css/leaflet.css">
-        <link rel="stylesheet" href="css/qgis2web.css">
+        
+        <!-- Preload critical scripts for parallel downloading -->
+        <link rel="preload" href="js/leaflet.js" as="script">
+        <link rel="preload" href="js/qgis2web_expressions.js" as="script">
+        <link rel="preload" href="js/Autolinker.min.js" as="script">
+        <link rel="preload" href="data/MalhaMunicipalestadodeSoPaulo_2.js" as="script">
+        <link rel="preload" href="data/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.js" as="script">
+        <link rel="preload" href="data/FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.js" as="script">
         
         <!-- Non-critical CSS loaded asynchronously -->
         <link rel="preload" href="css/L.Control.Layers.Tree.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -19,6 +24,8 @@
         
         <!-- Fallback for browsers that don't support preload -->
         <noscript>
+            <link rel="stylesheet" href="css/leaflet.css">
+            <link rel="stylesheet" href="css/qgis2web.css">
             <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
             <link rel="stylesheet" href="css/L.Control.Locate.min.css">
             <link rel="stylesheet" href="css/fontawesome-all.min.css">
@@ -26,11 +33,110 @@
             <link rel="stylesheet" href="css/leaflet-measure.css">
         </noscript>
         <style>
+        /* Critical inlined CSS for immediate rendering */
+        
+        /* Essential Leaflet styles */
+        .leaflet-pane,
+        .leaflet-tile,
+        .leaflet-marker-icon,
+        .leaflet-marker-shadow,
+        .leaflet-tile-container,
+        .leaflet-pane > svg,
+        .leaflet-pane > canvas,
+        .leaflet-zoom-box,
+        .leaflet-image-layer,
+        .leaflet-layer {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        .leaflet-container {
+            overflow: hidden;
+            background: #ddd;
+            outline: 0;
+        }
+        .leaflet-tile,
+        .leaflet-marker-icon,
+        .leaflet-marker-shadow {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .leaflet-tile::selection {
+            background: transparent;
+        }
+        .leaflet-container .leaflet-overlay-pane svg,
+        .leaflet-container .leaflet-marker-pane img,
+        .leaflet-container .leaflet-shadow-pane img,
+        .leaflet-container .leaflet-tile-pane img,
+        .leaflet-container img.leaflet-image-layer,
+        .leaflet-container .leaflet-tile {
+            max-width: none !important;
+            max-height: none !important;
+        }
+        .leaflet-container.leaflet-touch-zoom {
+            -ms-touch-action: pan-x pan-y;
+            touch-action: pan-x pan-y;
+        }
+        .leaflet-container.leaflet-touch-drag {
+            -ms-touch-action: pinch-zoom;
+            touch-action: none;
+            touch-action: pinch-zoom;
+        }
+        .leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+            -ms-touch-action: none;
+            touch-action: none;
+        }
+        .leaflet-tile {
+            filter: inherit;
+            visibility: hidden;
+        }
+        .leaflet-tile-loaded {
+            visibility: inherit;
+        }
+        .leaflet-pane { z-index: 400; }
+        .leaflet-tile-pane { z-index: 200; }
+        .leaflet-overlay-pane { z-index: 400; }
+        .leaflet-shadow-pane { z-index: 500; }
+        .leaflet-marker-pane { z-index: 600; }
+        .leaflet-tooltip-pane { z-index: 650; }
+        .leaflet-popup-pane { z-index: 700; }
+        .leaflet-map-pane canvas { z-index: 100; }
+        .leaflet-map-pane svg { z-index: 200; }
+        .leaflet-control {
+            position: relative;
+            z-index: 800;
+            pointer-events: auto;
+            float: left;
+            clear: both;
+        }
+        .leaflet-top,
+        .leaflet-bottom {
+            position: absolute;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .leaflet-top { top: 0; }
+        .leaflet-right { right: 0; }
+        .leaflet-bottom { bottom: 0; }
+        .leaflet-left { left: 0; }
+        .leaflet-right .leaflet-control { float: right; }
+        .leaflet-top .leaflet-control { margin-top: 10px; }
+        .leaflet-bottom .leaflet-control { margin-bottom: 10px; }
+        .leaflet-left .leaflet-control { margin-left: 10px; }
+        .leaflet-right .leaflet-control { margin-right: 10px; }
+        
+        /* Essential qgis2web styles */
+        #map {
+            background-color: #ffffff;
+        }
         html, body, #map {
             width: 100%;
             height: 100%;
             padding: 0;
             margin: 0;
+            overflow: hidden;
         }
         
         /* Loading overlay */
@@ -94,83 +200,103 @@
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/Autolinker.min.js"></script>
         
-        <!-- Non-critical scripts loaded asynchronously -->
-        <script>
-        // Loading progress management
-        let scriptsToLoad = [
-            'js/L.Control.Layers.Tree.min.js',
-            'js/L.Control.Locate.min.js',
-            'js/leaflet.rotatedMarker.js',
-            'js/leaflet.pattern.js',
-            'js/leaflet-hash.js',
-            'js/rbush.min.js',
-            'js/labelgun.min.js',
-            'js/labels.js',
-            'js/leaflet.wms.js',
-            'js/leaflet-control-geocoder.Geocoder.js',
-            'js/leaflet-measure.js'
-        ];
+        <!-- Non-critical scripts loaded with defer for parallel execution -->
+        <script defer src="js/L.Control.Layers.Tree.min.js"></script>
+        <script defer src="js/L.Control.Locate.min.js"></script>
+        <script defer src="js/leaflet.rotatedMarker.js"></script>
+        <script defer src="js/leaflet.pattern.js"></script>
+        <script defer src="js/leaflet-hash.js"></script>
+        <script defer src="js/rbush.min.js"></script>
+        <script defer src="js/labelgun.min.js"></script>
+        <script defer src="js/labels.js"></script>
+        <script defer src="js/leaflet.wms.js"></script>
+        <script defer src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script defer src="js/leaflet-measure.js"></script>
         
-        let dataFiles = [
-            'data/MalhaMunicipalestadodeSoPaulo_2.js',
-            'data/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.js',
-            'data/FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.js'
-        ];
+        <!-- Main initialization script -->
+        <script>
+        let loadedScripts = 0;
+        let totalScripts = 11; // number of deferred scripts
+        let loadedDataFiles = 0;
+        let totalDataFiles = 3;
+        let mapInitialized = false;
+        let layersInitialized = false;
         
         function updateProgress(message) {
             document.getElementById('loading-progress').textContent = message;
         }
         
-        function loadScript(src) {
+        function loadDataFile(src) {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = src;
-                script.onload = resolve;
+                script.onload = () => {
+                    loadedDataFiles++;
+                    updateProgress(`Carregando dados... (${loadedDataFiles}/${totalDataFiles})`);
+                    resolve();
+                };
                 script.onerror = reject;
                 document.head.appendChild(script);
             });
         }
         
-        async function loadScriptsSequentially() {
-            updateProgress('Carregando controles do mapa...');
-            
-            // Load non-critical scripts
-            for (let i = 0; i < scriptsToLoad.length; i++) {
-                try {
-                    await loadScript(scriptsToLoad[i]);
-                    updateProgress(`Carregando controles... (${i+1}/${scriptsToLoad.length})`);
-                } catch (error) {
-                    console.warn(`Failed to load ${scriptsToLoad[i]}:`, error);
-                }
+        function checkInitializationReady() {
+            // Check if all deferred scripts and data files are loaded
+            if (loadedScripts >= totalScripts && loadedDataFiles >= totalDataFiles && !layersInitialized) {
+                updateProgress('Finalizando...');
+                initializeLayers();
+                layersInitialized = true;
+                
+                // Hide loading overlay after a brief delay to ensure smooth transition
+                setTimeout(() => {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }, 300);
             }
-            
-            // Initialize basic map
-            updateProgress('Inicializando mapa...');
-            initializeMap();
-            
-            // Load data files
-            updateProgress('Carregando dados dos municípios...');
-            await loadScript(dataFiles[0]);
-            
-            updateProgress('Carregando dados das favelas setorizadas...');
-            await loadScript(dataFiles[1]);
-            
-            updateProgress('Carregando dados das favelas não setorizadas...');
-            await loadScript(dataFiles[2]);
-            
-            updateProgress('Finalizando...');
-            
-            // Initialize layers after all data is loaded
-            initializeLayers();
-            
-            // Hide loading overlay
+        }
+        
+        // Track deferred script loading using a more reliable method
+        let scriptsLoaded = 0;
+        function trackScriptLoad() {
+            scriptsLoaded++;
+            loadedScripts = scriptsLoaded;
+            updateProgress(`Carregando controles... (${loadedScripts}/${totalScripts})`);
+            checkInitializationReady();
+        }
+        
+        // Override to track script loading manually since defer event tracking is unreliable
+        window.addEventListener('load', function() {
+            // After window load, wait a bit for deferred scripts to complete
             setTimeout(() => {
-                document.getElementById('loading-overlay').style.display = 'none';
-            }, 500);
+                if (loadedScripts < totalScripts) {
+                    loadedScripts = totalScripts; // Assume all scripts loaded after window load
+                    checkInitializationReady();
+                }
+            }, 1000);
+        });
+        
+        async function startLoading() {
+            try {
+                // Initialize basic map immediately
+                updateProgress('Inicializando mapa...');
+                initializeMap();
+                mapInitialized = true;
+                
+                // Load all data files in parallel
+                updateProgress('Carregando dados...');
+                await Promise.all([
+                    loadDataFile('data/MalhaMunicipalestadodeSoPaulo_2.js'),
+                    loadDataFile('data/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.js'),
+                    loadDataFile('data/FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.js')
+                ]);
+                
+                checkInitializationReady();
+            } catch (error) {
+                console.error('Error loading application:', error);
+                updateProgress('Erro ao carregar. Recarregue a página.');
+            }
         }
         
         function initializeMap() {
-            // Initialize basic map
             window.map = L.map('map', {
                 zoomControl: false, maxZoom: 28, minZoom: 1
             });
@@ -178,7 +304,7 @@
             // Show satellite base layer immediately
             map.createPane('pane_GoogleSatellite_0');
             map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
-            var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            window.layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
                 pane: 'pane_GoogleSatellite_0',
                 opacity: 1.0,
                 attribution: '',
@@ -202,15 +328,9 @@
         }
         
         function initializeLayers() {
-            // This will contain the original layer initialization code
-            // after data files are loaded
-            initializeOriginalCode();
-        }
-        
-        function initializeOriginalCode() {
-            // Map is already initialized, just add hash and other components
             var hash = new L.Hash(map);
             var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+            
         // remove popup's row if "visible-with-data"
         function removeEmptyRowsFromPopupContent(content, feature) {
          var tempDiv = document.createElement('div');
@@ -225,6 +345,7 @@
          }
          return tempDiv.innerHTML;
         }
+        
         // add class to format popup if it contains media
 		function addClassToPopupIfMedia(content, popup) {
 			var tempDiv = document.createElement('div');
@@ -239,9 +360,7 @@
 				popup._contentNode.classList.remove('media');
 			}
 		}
-        var zoomControl = L.control.zoom({
-            position: 'topleft'
-        }).addTo(map);
+        
         L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
         var measureControl = new L.Control.Measure({
             position: 'topleft',
@@ -253,6 +372,7 @@
         measureControl.addTo(map);
         document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
         document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        
         var bounds_group = new L.featureGroup([]);
         function setBounds() {
             if (bounds_group.getLayers().length) {
@@ -260,17 +380,8 @@
             }
             map.setMaxBounds(map.getBounds());
         }
-        map.createPane('pane_GoogleSatellite_0');
-        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
-        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            pane: 'pane_GoogleSatellite_0',
-            opacity: 1.0,
-            attribution: '',
-            minZoom: 1,
-            maxZoom: 28,
-        });
-        layer_GoogleSatellite_0;
-        map.addLayer(layer_GoogleSatellite_0);
+        
+        // WMS layer - Ortofotos
         map.createPane('pane_OrtofotosdoEstadodeSoPaulo2023a2024_1');
         map.getPane('pane_OrtofotosdoEstadodeSoPaulo2023a2024_1').style.zIndex = 401;
         var layer_OrtofotosdoEstadodeSoPaulo2023a2024_1 = L.WMS.layer("https://www.idesp.sp.gov.br/geoimage/idesp_raster/wms", "ORTOFOTOS_SP_2023_2024", {
@@ -535,18 +646,15 @@
             {label: '<img src="legend/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.png" /> Favelas e Comunidades Urbanas - Setorizadas - Censo 2022 IBGE', layer: layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3},
             {label: '<img src="legend/MalhaMunicipalestadodeSoPaulo_2.png" /> Malha Municipal - estado de São Paulo', layer: layer_MalhaMunicipalestadodeSoPaulo_2},
             {label: "Ortofotos do Estado de São Paulo - 2023 a 2024", layer: layer_OrtofotosdoEstadodeSoPaulo2023a2024_1, radioGroup: 'bm' },
-            {label: "Google Satellite", layer: layer_GoogleSatellite_0, radioGroup: 'bm' },]
+            {label: "Google Satellite", layer: layer_GoogleSatellite_0, radioGroup: 'bm' }
+        ];
         var lay = L.control.layers.tree(null, overlaysTree,{
-            //namedToggle: true,
-            //selectorBack: false,
-            //closedSymbol: '&#8862; &#x1f5c0;',
-            //openedSymbol: '&#8863; &#x1f5c1;',
-            //collapseAll: 'Collapse all',
-            //expandAll: 'Expand all',
             collapsed: true,
         });
         lay.addTo(map);
         setBounds();
+        
+        // Add tooltips and labels
         var i = 0;
         layer_MalhaMunicipalestadodeSoPaulo_2.eachLayer(function(layer) {
             var context = {
@@ -560,6 +668,7 @@
               addLabel(layer, i);
               i++;
         });
+        
         var i = 0;
         layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.eachLayer(function(layer) {
             var context = {
@@ -573,6 +682,7 @@
               addLabel(layer, i);
               i++;
         });
+        
         var i = 0;
         layer_FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.eachLayer(function(layer) {
             var context = {
@@ -586,6 +696,7 @@
               addLabel(layer, i);
               i++;
         });
+        
         resetLabels([layer_MalhaMunicipalestadodeSoPaulo_2,layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3,layer_FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4]);
         map.on("zoomend", function(){
             resetLabels([layer_MalhaMunicipalestadodeSoPaulo_2,layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3,layer_FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4]);
@@ -596,13 +707,14 @@
         map.on("layerremove", function(){
             resetLabels([layer_MalhaMunicipalestadodeSoPaulo_2,layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3,layer_FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4]);
         });
-        } // End of initializeOriginalCode
+        } // End of initializeLayers
         
-        // Start the progressive loading
-        loadScriptsSequentially().catch(error => {
-            console.error('Error loading scripts:', error);
-            document.getElementById('loading-progress').textContent = 'Erro ao carregar. Recarregue a página.';
-        });
+        // Start the progressive loading when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startLoading);
+        } else {
+            startLoading();
+        }
         </script>
     </body>
 </html>
