@@ -6,13 +6,25 @@
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
+        <!-- Critical CSS for immediate rendering -->
         <link rel="stylesheet" href="css/leaflet.css">
-        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
-        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
         <link rel="stylesheet" href="css/qgis2web.css">
-        <link rel="stylesheet" href="css/fontawesome-all.min.css">
-        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
-        <link rel="stylesheet" href="css/leaflet-measure.css">
+        
+        <!-- Non-critical CSS loaded asynchronously -->
+        <link rel="preload" href="css/L.Control.Layers.Tree.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <link rel="preload" href="css/L.Control.Locate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <link rel="preload" href="css/fontawesome-all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <link rel="preload" href="css/leaflet-control-geocoder.Geocoder.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <link rel="preload" href="css/leaflet-measure.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        
+        <!-- Fallback for browsers that don't support preload -->
+        <noscript>
+            <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+            <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+            <link rel="stylesheet" href="css/fontawesome-all.min.css">
+            <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+            <link rel="stylesheet" href="css/leaflet-measure.css">
+        </noscript>
         <style>
         html, body, #map {
             width: 100%;
@@ -20,36 +32,185 @@
             padding: 0;
             margin: 0;
         }
+        
+        /* Loading overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .loading-progress {
+            font-size: 14px;
+            color: #666;
+        }
         </style>
         <title></title>
     </head>
     <body>
+        <!-- Loading overlay -->
+        <div id="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Carregando Mapa FCU...</div>
+            <div class="loading-progress" id="loading-progress">Inicializando...</div>
+        </div>
+        
         <div id="map">
         </div>
-        <script src="js/qgis2web_expressions.js"></script>
+        
+        <!-- Critical scripts for core functionality -->
         <script src="js/leaflet.js"></script>
-        <script src="js/L.Control.Layers.Tree.min.js"></script>
-        <script src="js/L.Control.Locate.min.js"></script>
-        <script src="js/leaflet.rotatedMarker.js"></script>
-        <script src="js/leaflet.pattern.js"></script>
-        <script src="js/leaflet-hash.js"></script>
+        <script src="js/qgis2web_expressions.js"></script>
         <script src="js/Autolinker.min.js"></script>
-        <script src="js/rbush.min.js"></script>
-        <script src="js/labelgun.min.js"></script>
-        <script src="js/labels.js"></script>
-        <script src="js/leaflet.wms.js"></script>
-        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
-        <script src="js/leaflet-measure.js"></script>
-        <script src="data/MalhaMunicipalestadodeSoPaulo_2.js"></script>
-        <script src="data/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.js"></script>
-        <script src="data/FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.js"></script>
+        
+        <!-- Non-critical scripts loaded asynchronously -->
         <script>
-        var map = L.map('map', {
-            zoomControl:false, maxZoom:28, minZoom:1
-        })
-        var hash = new L.Hash(map);
-        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
-        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // Loading progress management
+        let scriptsToLoad = [
+            'js/L.Control.Layers.Tree.min.js',
+            'js/L.Control.Locate.min.js',
+            'js/leaflet.rotatedMarker.js',
+            'js/leaflet.pattern.js',
+            'js/leaflet-hash.js',
+            'js/rbush.min.js',
+            'js/labelgun.min.js',
+            'js/labels.js',
+            'js/leaflet.wms.js',
+            'js/leaflet-control-geocoder.Geocoder.js',
+            'js/leaflet-measure.js'
+        ];
+        
+        let dataFiles = [
+            'data/MalhaMunicipalestadodeSoPaulo_2.js',
+            'data/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.js',
+            'data/FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.js'
+        ];
+        
+        function updateProgress(message) {
+            document.getElementById('loading-progress').textContent = message;
+        }
+        
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        async function loadScriptsSequentially() {
+            updateProgress('Carregando controles do mapa...');
+            
+            // Load non-critical scripts
+            for (let i = 0; i < scriptsToLoad.length; i++) {
+                try {
+                    await loadScript(scriptsToLoad[i]);
+                    updateProgress(`Carregando controles... (${i+1}/${scriptsToLoad.length})`);
+                } catch (error) {
+                    console.warn(`Failed to load ${scriptsToLoad[i]}:`, error);
+                }
+            }
+            
+            // Initialize basic map
+            updateProgress('Inicializando mapa...');
+            initializeMap();
+            
+            // Load data files
+            updateProgress('Carregando dados dos municípios...');
+            await loadScript(dataFiles[0]);
+            
+            updateProgress('Carregando dados das favelas setorizadas...');
+            await loadScript(dataFiles[1]);
+            
+            updateProgress('Carregando dados das favelas não setorizadas...');
+            await loadScript(dataFiles[2]);
+            
+            updateProgress('Finalizando...');
+            
+            // Initialize layers after all data is loaded
+            initializeLayers();
+            
+            // Hide loading overlay
+            setTimeout(() => {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }, 500);
+        }
+        
+        function initializeMap() {
+            // Initialize basic map
+            window.map = L.map('map', {
+                zoomControl: false, maxZoom: 28, minZoom: 1
+            });
+            
+            // Show satellite base layer immediately
+            map.createPane('pane_GoogleSatellite_0');
+            map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+            var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                pane: 'pane_GoogleSatellite_0',
+                opacity: 1.0,
+                attribution: '',
+                minZoom: 1,
+                maxZoom: 28,
+                minNativeZoom: 0,
+                maxNativeZoom: 20
+            });
+            layer_GoogleSatellite_0.addTo(map);
+            
+            // Set initial view to São Paulo
+            map.setView([-23.5489, -46.6388], 10);
+            
+            // Add basic controls
+            var zoomControl = L.control.zoom({
+                position: 'topleft'
+            }).addTo(map);
+            
+            // Set attribution
+            map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        }
+        
+        function initializeLayers() {
+            // This will contain the original layer initialization code
+            // after data files are loaded
+            initializeOriginalCode();
+        }
+        
+        function initializeOriginalCode() {
+            // Map is already initialized, just add hash and other components
+            var hash = new L.Hash(map);
+            var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
         // remove popup's row if "visible-with-data"
         function removeEmptyRowsFromPopupContent(content, feature) {
          var tempDiv = document.createElement('div');
@@ -434,6 +595,13 @@
         });
         map.on("layerremove", function(){
             resetLabels([layer_MalhaMunicipalestadodeSoPaulo_2,layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3,layer_FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4]);
+        });
+        } // End of initializeOriginalCode
+        
+        // Start the progressive loading
+        loadScriptsSequentially().catch(error => {
+            console.error('Error loading scripts:', error);
+            document.getElementById('loading-progress').textContent = 'Erro ao carregar. Recarregue a página.';
         });
         </script>
     </body>
