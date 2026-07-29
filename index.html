@@ -149,7 +149,10 @@
         const loadedDataFileSources = new Set();
         
         function updateProgress(message) {
-            document.getElementById('loading-progress').textContent = message;
+            const loadingProgress = document.getElementById('loading-progress');
+            if (loadingProgress) {
+                loadingProgress.textContent = message;
+            }
         }
         
         function loadScript(src) {
@@ -662,9 +665,7 @@
                 ? error.message
                 : typeof error === 'string'
                     ? error
-                    : error
-                        ? `Falha ao carregar recursos (${typeof error}). Verifique a conexão e tente novamente.`
-                        : 'Falha ao carregar recursos. Verifique a conexão e tente novamente.';
+                    : `Falha ao carregar recursos (${typeof error}). Verifique a conexão e tente novamente.`;
             const loadingProgress = document.getElementById('loading-progress');
             if (loadingProgress) {
                 loadingProgress.textContent = `Erro ao carregar: ${errorMessage}`;
