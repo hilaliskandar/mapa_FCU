@@ -656,8 +656,13 @@
         
         function handleLoadingError(error) {
             console.error('Error loading resources:', error);
-            const errorMessage = error?.message || 'Erro ao carregar recursos. Verifique a conexão e tente novamente.';
-            document.getElementById('loading-progress').textContent = `Erro ao carregar: ${errorMessage}`;
+            const errorMessage = error instanceof Error
+                ? error.message
+                : String(error || 'Erro ao carregar recursos. Verifique a conexão e tente novamente.');
+            const loadingProgress = document.getElementById('loading-progress');
+            if (loadingProgress) {
+                loadingProgress.textContent = `Erro ao carregar: ${errorMessage}`;
+            }
         }
         function startLoading() {
             loadResourcesParallel().catch(handleLoadingError);
