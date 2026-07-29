@@ -9,9 +9,9 @@
         <link rel="preload" href="js/leaflet.js" as="script">
         <link rel="preload" href="js/qgis2web_expressions.js" as="script">
         <link rel="preload" href="js/Autolinker.min.js" as="script">
-        <link rel="preload" href="data/MalhaMunicipalestadodeSoPaulo_2.js" as="fetch" crossorigin>
-        <link rel="preload" href="data/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.js" as="fetch" crossorigin>
-        <link rel="preload" href="data/FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.js" as="fetch" crossorigin>
+        <link rel="preload" href="data/MalhaMunicipalestadodeSoPaulo_2.js" as="script">
+        <link rel="preload" href="data/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.js" as="script">
+        <link rel="preload" href="data/FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.js" as="script">
         <!-- Critical CSS inlined for immediate rendering -->
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/qgis2web.css">
@@ -123,9 +123,9 @@
         </div>
         
         <!-- Critical scripts for core functionality -->
-        <script src="js/leaflet.js"></script>
-        <script src="js/qgis2web_expressions.js"></script>
-        <script src="js/Autolinker.min.js"></script>
+        <script defer src="js/leaflet.js"></script>
+        <script defer src="js/qgis2web_expressions.js"></script>
+        <script defer src="js/Autolinker.min.js"></script>
         
         <!-- Optimized parallel script loading -->
         <script>
@@ -171,23 +171,18 @@
             });
         }
         
-        // Optimized data file loading using fetch for better performance
-        async function loadDataFile(src) {
-            try {
-                const response = await fetch(src);
-                if (!response.ok) throw new Error(`Failed to load ${src}`);
-                const scriptText = await response.text();
-                // Execute the script content (it contains variable declarations)
+        function loadDataFile(src) {
+            return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                script.textContent = scriptText;
+                script.src = src;
+                script.onload = () => {
+                    loadedDataFiles++;
+                    updateProgress(`Carregando dados... (${loadedDataFiles}/${dataFiles.length})`);
+                    resolve();
+                };
+                script.onerror = reject;
                 document.head.appendChild(script);
-                loadedDataFiles++;
-                updateProgress(`Carregando dados... (${loadedDataFiles}/${dataFiles.length})`);
-            } catch (error) {
-                console.warn(`Failed to load data file ${src}:`, error);
-                // Fallback to script tag loading
-                return loadScript(src);
-            }
+            });
         }
         
         async function loadResourcesParallel() {
@@ -665,19 +660,18 @@
         });
         } // End of initializeOriginalCode
         
+        function handleLoadingError(error) {
+            console.error('Error loading resources:', error);
+            document.getElementById('loading-progress').textContent = 'Erro ao carregar. Recarregue a página.';
+        }
+        function startLoading() {
+            loadResourcesParallel().catch(handleLoadingError);
+        }
         // Start the parallel loading with better error handling
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                loadResourcesParallel().catch(error => {
-                    console.error('Error loading resources:', error);
-                    document.getElementById('loading-progress').textContent = 'Erro ao carregar. Recarregue a página.';
-                });
-            });
+            document.addEventListener('DOMContentLoaded', startLoading);
         } else {
-            loadResourcesParallel().catch(error => {
-                console.error('Error loading resources:', error);
-                document.getElementById('loading-progress').textContent = 'Erro ao carregar. Recarregue a página.';
-            });
+            startLoading();
         }
         </script>
     </body>
