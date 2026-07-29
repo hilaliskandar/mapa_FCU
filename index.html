@@ -6,6 +6,12 @@
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="preload" href="js/leaflet.js" as="script">
+        <link rel="preload" href="js/qgis2web_expressions.js" as="script">
+        <link rel="preload" href="js/Autolinker.min.js" as="script">
+        <link rel="preload" href="data/MalhaMunicipalestadodeSoPaulo_2.js" as="fetch" crossorigin>
+        <link rel="preload" href="data/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.js" as="fetch" crossorigin>
+        <link rel="preload" href="data/FavelaseComunidadesUrbanasNoSetorizadasCenso2022IBGE_4.js" as="fetch" crossorigin>
         <!-- Critical CSS inlined for immediate rendering -->
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/qgis2web.css">
@@ -117,9 +123,9 @@
         </div>
         
         <!-- Critical scripts for core functionality -->
-        <script defer src="js/leaflet.js"></script>
-        <script defer src="js/qgis2web_expressions.js"></script>
-        <script async src="js/Autolinker.min.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/Autolinker.min.js"></script>
         
         <!-- Optimized parallel script loading -->
         <script>
@@ -253,7 +259,7 @@
             // Show satellite base layer immediately
             map.createPane('pane_GoogleSatellite_0');
             map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
-            var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            window.layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
                 pane: 'pane_GoogleSatellite_0',
                 opacity: 1.0,
                 attribution: '',
@@ -262,7 +268,7 @@
                 minNativeZoom: 0,
                 maxNativeZoom: 20
             });
-            layer_GoogleSatellite_0.addTo(map);
+            window.layer_GoogleSatellite_0.addTo(map);
             
             // Set initial view to São Paulo
             map.setView([-23.5489, -46.6388], 10);
@@ -314,9 +320,6 @@
 				popup._contentNode.classList.remove('media');
 			}
 		}
-        var zoomControl = L.control.zoom({
-            position: 'topleft'
-        }).addTo(map);
         L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
         var measureControl = new L.Control.Measure({
             position: 'topleft',
@@ -335,17 +338,6 @@
             }
             map.setMaxBounds(map.getBounds());
         }
-        map.createPane('pane_GoogleSatellite_0');
-        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
-        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            pane: 'pane_GoogleSatellite_0',
-            opacity: 1.0,
-            attribution: '',
-            minZoom: 1,
-            maxZoom: 28,
-        });
-        layer_GoogleSatellite_0;
-        map.addLayer(layer_GoogleSatellite_0);
         map.createPane('pane_OrtofotosdoEstadodeSoPaulo2023a2024_1');
         map.getPane('pane_OrtofotosdoEstadodeSoPaulo2023a2024_1').style.zIndex = 401;
         var layer_OrtofotosdoEstadodeSoPaulo2023a2024_1 = L.WMS.layer("https://www.idesp.sp.gov.br/geoimage/idesp_raster/wms", "ORTOFOTOS_SP_2023_2024", {
@@ -610,7 +602,7 @@
             {label: '<img src="legend/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.png" /> Favelas e Comunidades Urbanas - Setorizadas - Censo 2022 IBGE', layer: layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3},
             {label: '<img src="legend/MalhaMunicipalestadodeSoPaulo_2.png" /> Malha Municipal - estado de São Paulo', layer: layer_MalhaMunicipalestadodeSoPaulo_2},
             {label: "Ortofotos do Estado de São Paulo - 2023 a 2024", layer: layer_OrtofotosdoEstadodeSoPaulo2023a2024_1, radioGroup: 'bm' },
-            {label: "Google Satellite", layer: layer_GoogleSatellite_0, radioGroup: 'bm' },]
+            {label: "Google Satellite", layer: window.layer_GoogleSatellite_0, radioGroup: 'bm' },]
         var lay = L.control.layers.tree(null, overlaysTree,{
             //namedToggle: true,
             //selectorBack: false,
@@ -674,10 +666,19 @@
         } // End of initializeOriginalCode
         
         // Start the parallel loading with better error handling
-        loadResourcesParallel().catch(error => {
-            console.error('Error loading resources:', error);
-            document.getElementById('loading-progress').textContent = 'Erro ao carregar. Recarregue a página.';
-        });
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                loadResourcesParallel().catch(error => {
+                    console.error('Error loading resources:', error);
+                    document.getElementById('loading-progress').textContent = 'Erro ao carregar. Recarregue a página.';
+                });
+            });
+        } else {
+            loadResourcesParallel().catch(error => {
+                console.error('Error loading resources:', error);
+                document.getElementById('loading-progress').textContent = 'Erro ao carregar. Recarregue a página.';
+            });
+        }
         </script>
     </body>
 </html>
