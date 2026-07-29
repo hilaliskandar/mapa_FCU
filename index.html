@@ -657,12 +657,12 @@
         
         function handleLoadingError(error) {
             console.error('Error loading resources:', error);
-            document.getElementById('loading-progress').textContent = error?.message
-                ? `Erro ao carregar: ${error.message}`
+            const errorMessage = error?.message || 'Erro desconhecido';
+            document.getElementById('loading-progress').textContent = error
+                ? `Erro ao carregar: ${errorMessage}`
                 : 'Erro ao carregar. Recarregue a página.';
         }
         function startLoadingOnce() {
-            document.removeEventListener('DOMContentLoaded', startLoadingOnce);
             loadResourcesParallel().catch(handleLoadingError);
         }
         // Start the parallel loading with better error handling
