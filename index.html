@@ -146,6 +146,7 @@
         
         let loadedScripts = 0;
         let loadedDataFiles = 0;
+        let googleSatelliteLayer;
         
         function updateProgress(message) {
             document.getElementById('loading-progress').textContent = message;
@@ -248,7 +249,7 @@
             // Show satellite base layer immediately
             map.createPane('pane_GoogleSatellite_0');
             map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
-            window.layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            googleSatelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
                 pane: 'pane_GoogleSatellite_0',
                 opacity: 1.0,
                 attribution: '',
@@ -257,7 +258,7 @@
                 minNativeZoom: 0,
                 maxNativeZoom: 20
             });
-            window.layer_GoogleSatellite_0.addTo(map);
+            googleSatelliteLayer.addTo(map);
             
             // Set initial view to São Paulo
             map.setView([-23.5489, -46.6388], 10);
@@ -591,7 +592,7 @@
             {label: '<img src="legend/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.png" /> Favelas e Comunidades Urbanas - Setorizadas - Censo 2022 IBGE', layer: layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3},
             {label: '<img src="legend/MalhaMunicipalestadodeSoPaulo_2.png" /> Malha Municipal - estado de São Paulo', layer: layer_MalhaMunicipalestadodeSoPaulo_2},
             {label: "Ortofotos do Estado de São Paulo - 2023 a 2024", layer: layer_OrtofotosdoEstadodeSoPaulo2023a2024_1, radioGroup: 'bm' },
-            {label: "Google Satellite", layer: window.layer_GoogleSatellite_0, radioGroup: 'bm' },]
+            {label: "Google Satellite", layer: googleSatelliteLayer, radioGroup: 'bm' },]
         var lay = L.control.layers.tree(null, overlaysTree,{
             //namedToggle: true,
             //selectorBack: false,
@@ -656,18 +657,19 @@
         
         function handleLoadingError(error) {
             console.error('Error loading resources:', error);
-            document.getElementById('loading-progress').textContent = error && error.message
+            document.getElementById('loading-progress').textContent = error?.message
                 ? `Erro ao carregar: ${error.message}`
                 : 'Erro ao carregar. Recarregue a página.';
         }
-        function startLoading() {
+        function startLoadingOnce() {
+            document.removeEventListener('DOMContentLoaded', startLoadingOnce);
             loadResourcesParallel().catch(handleLoadingError);
         }
         // Start the parallel loading with better error handling
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', startLoading);
+            document.addEventListener('DOMContentLoaded', startLoadingOnce);
         } else {
-            startLoading();
+            loadResourcesParallel().catch(handleLoadingError);
         }
         </script>
     </body>
