@@ -146,7 +146,6 @@
         
         let loadedScripts = 0;
         const loadedDataFileSources = new Set();
-        const layers = {};
         
         function updateProgress(message) {
             const loadingProgress = document.getElementById('loading-progress');
@@ -244,6 +243,7 @@
             }
         }
         
+        const layers = {};
         function initializeMap() {
             // Initialize basic map
             window.map = L.map('map', {
@@ -667,7 +667,7 @@
             } else if (typeof error === 'string') {
                 errorMessage = error;
             } else {
-                errorMessage = `Falha ao carregar recursos (${typeof error}). Verifique a conexão e tente novamente.`;
+                errorMessage = 'Falha ao carregar recursos. Verifique a conexão e tente novamente.';
             }
             const loadingProgress = document.getElementById('loading-progress');
             if (loadingProgress) {
@@ -678,11 +678,7 @@
             loadResourcesParallel().catch(handleLoadingError);
         }
         // Start the parallel loading with better error handling
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', startLoading, {once: true});
-        } else {
-            startLoading();
-        }
+        document.addEventListener('DOMContentLoaded', startLoading, {once: true});
         </script>
     </body>
 </html>
