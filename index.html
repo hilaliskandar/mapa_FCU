@@ -658,16 +658,13 @@
         function handleLoadingError(error) {
             console.error('Error loading resources:', error);
             const errorMessage = error?.message || 'Erro desconhecido';
-            document.getElementById('loading-progress').textContent = error
-                ? `Erro ao carregar: ${errorMessage}`
-                : 'Erro ao carregar. Recarregue a página.';
-        }
-        function startLoadingOnce() {
-            loadResourcesParallel().catch(handleLoadingError);
+            document.getElementById('loading-progress').textContent = `Erro ao carregar: ${errorMessage}`;
         }
         // Start the parallel loading with better error handling
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', startLoadingOnce);
+            document.addEventListener('DOMContentLoaded', function() {
+                loadResourcesParallel().catch(handleLoadingError);
+            }, {once: true});
         } else {
             loadResourcesParallel().catch(handleLoadingError);
         }
