@@ -145,8 +145,8 @@
         ];
         
         let loadedScripts = 0;
-        let loadedDataFiles = 0;
         const loadedDataFileSources = new Set();
+        const layers = {};
         
         function updateProgress(message) {
             const loadingProgress = document.getElementById('loading-progress');
@@ -175,7 +175,7 @@
                 script.src = src;
                 script.onload = () => {
                     loadedDataFileSources.add(src);
-                    loadedDataFiles = loadedDataFileSources.size;
+                    const loadedDataFiles = loadedDataFileSources.size;
                     updateProgress(`Carregando dados... (${loadedDataFiles}/${dataFiles.length})`);
                     resolve();
                 };
@@ -253,7 +253,7 @@
             // Show satellite base layer immediately
             map.createPane('pane_GoogleSatellite_0');
             map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
-            map.layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            layers.layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
                 pane: 'pane_GoogleSatellite_0',
                 opacity: 1.0,
                 attribution: '',
@@ -262,7 +262,7 @@
                 minNativeZoom: 0,
                 maxNativeZoom: 20
             });
-            map.layer_GoogleSatellite_0.addTo(map);
+            layers.layer_GoogleSatellite_0.addTo(map);
             
             // Set initial view to São Paulo
             map.setView([-23.5489, -46.6388], 10);
@@ -596,7 +596,7 @@
             {label: '<img src="legend/FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3.png" /> Favelas e Comunidades Urbanas - Setorizadas - Censo 2022 IBGE', layer: layer_FavelaseComunidadesUrbanasSetorizadasCenso2022IBGE_3},
             {label: '<img src="legend/MalhaMunicipalestadodeSoPaulo_2.png" /> Malha Municipal - estado de São Paulo', layer: layer_MalhaMunicipalestadodeSoPaulo_2},
             {label: "Ortofotos do Estado de São Paulo - 2023 a 2024", layer: layer_OrtofotosdoEstadodeSoPaulo2023a2024_1, radioGroup: 'bm' },
-            {label: "Google Satellite", layer: map.layer_GoogleSatellite_0, radioGroup: 'bm' },]
+            {label: "Google Satellite", layer: layers.layer_GoogleSatellite_0, radioGroup: 'bm' },]
         var lay = L.control.layers.tree(null, overlaysTree,{
             //namedToggle: true,
             //selectorBack: false,
@@ -661,11 +661,14 @@
         
         function handleLoadingError(error) {
             console.error('Error loading resources:', error);
-            const errorMessage = error instanceof Error
-                ? error.message
-                : typeof error === 'string'
-                    ? error
-                    : `Falha ao carregar recursos (${typeof error}). Verifique a conexão e tente novamente.`;
+            let errorMessage;
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            } else {
+                errorMessage = `Falha ao carregar recursos (${typeof error}). Verifique a conexão e tente novamente.`;
+            }
             const loadingProgress = document.getElementById('loading-progress');
             if (loadingProgress) {
                 loadingProgress.textContent = `Erro ao carregar: ${errorMessage}`;
